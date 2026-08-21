@@ -1,7 +1,8 @@
 """
 app.py
-------
-Streamlit dashboard for the Flight Delay & Demand Predictor.
+
+Dashboard for the flight delay/demand predictor. Loads the models trained in
+train_model.py and lets you play with predictions + see some charts.
 
 Run locally with:
     streamlit run app.py

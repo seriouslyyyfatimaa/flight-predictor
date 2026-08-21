@@ -1,11 +1,11 @@
 """
 train_model.py
----------------
-Trains two models on the flight dataset:
-  1. Classifier -> predicts probability a flight is delayed
-  2. Regressor  -> predicts expected demand ratio (booking load)
 
-Both are saved to models/ so app.py can load them without retraining.
+Trains two models on the flight dataset:
+  1. Classifier - predicts if a flight will be delayed
+  2. Regressor  - predicts how full the flight will be (demand)
+
+Saves both to models/ so app.py doesn't need to retrain every time it loads.
 """
 
 import pandas as pd
@@ -34,10 +34,13 @@ def main():
     df = pd.read_csv('data/flights.csv')
     X = df[CATEGORICAL + NUMERIC]
 
-    # ---------------- Delay classifier ----------------
+    # ---------------- delay classifier ----------------
     y_delay = df['delayed']
     X_train, X_test, y_train, y_test = train_test_split(X, y_delay, test_size=0.2, random_state=42, stratify=y_delay)
 
+    # class_weight='balanced' matters here - only ~18% of flights are delayed,
+    # so without this the model just predicts "not delayed" every time and
+    # still looks accurate while being useless
     clf = build_pipeline(RandomForestClassifier(
         n_estimators=200, max_depth=8, random_state=42, class_weight='balanced'
     ))
@@ -52,7 +55,7 @@ def main():
 
     joblib.dump(clf, 'models/delay_classifier.pkl')
 
-    # ---------------- Demand regressor ----------------
+    # ---------------- demand regressor ----------------
     y_demand = df['demand_ratio']
     X_train2, X_test2, y_train2, y_test2 = train_test_split(X, y_demand, test_size=0.2, random_state=42)
 
@@ -66,7 +69,7 @@ def main():
 
     joblib.dump(reg, 'models/demand_regressor.pkl')
 
-    # ---------------- Feature importance (for dashboard) ----------------
+    # ---------------- feature importance (used in the dashboard) ----------------
     ohe = clf.named_steps['prep'].named_transformers_['cat']
     cat_names = ohe.get_feature_names_out(CATEGORICAL)
     all_names = list(cat_names) + NUMERIC
@@ -76,7 +79,7 @@ def main():
     fi_df = fi_df.sort_values('importance', ascending=False)
     fi_df.to_csv('models/feature_importance.csv', index=False)
 
-    print("\nSaved: models/delay_classifier.pkl, models/demand_regressor.pkl, models/feature_importance.csv")
+    print("\nSaved models to models/delay_classifier.pkl, models/demand_regressor.pkl, models/feature_importance.csv")
 
 if __name__ == '__main__':
     main()

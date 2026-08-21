@@ -1,21 +1,18 @@
 """
 generate_data.py
------------------
-Generates a synthetic flight delay + demand dataset for DXB (Dubai) routes.
 
-Why synthetic data? Kaggle requires an account + API key to download
-programmatically, so this script builds a realistic stand-in dataset with
-the same *shape* and *relationships* real flight data has (weather affects
-delay, evening slots are more congested, holiday season raises demand and
-price, etc). You can train and demo the whole pipeline today.
+Builds a fake but realistic flight dataset for DXB routes since I didn't want
+to deal with Kaggle API setup just to get a first version working.
 
-To swap in REAL data later:
-  1. Create a free Kaggle account -> Account -> Create API Token (downloads kaggle.json)
-  2. pip install kaggle
-  3. Place kaggle.json in ~/.kaggle/
-  4. kaggle datasets download -d usdot/flight-delays  (or similar dataset)
-  5. Point train_model.py at the new CSV and match column names below,
-     or adjust the FEATURE_COLS list in train_model.py to match.
+The relationships are made up but based on how flight delays actually work in
+real life - bad weather = more delays, evening flights = more congestion,
+holiday season = more demand and higher prices.
+
+If I want to use real data later:
+1. Make a Kaggle account, get an API key (kaggle.json)
+2. pip install kaggle
+3. kaggle datasets download -d usdot/flight-delays
+4. Match up the column names with what's in train_model.py
 """
 
 import numpy as np
@@ -28,7 +25,7 @@ N_ROWS = 8000
 AIRLINES = ['Emirates', 'Etihad', 'Qatar Airways', 'British Airways', 'Singapore Airlines', 'Turkish Airlines']
 AIRLINE_WEIGHTS = [0.35, 0.15, 0.15, 0.10, 0.15, 0.10]
 
-# (origin, destination, distance_km) — DXB hub routes
+# (origin, destination, distance_km) - DXB hub routes
 ROUTES = [
     ('DXB', 'LHR', 5500), ('DXB', 'JFK', 11000), ('DXB', 'SYD', 12000),
     ('DXB', 'BKK', 4900), ('DXB', 'SIN', 5900), ('DXB', 'CDG', 5200),
@@ -50,14 +47,14 @@ def generate():
 
         is_holiday_season = month in [6, 7, 12, 1]
 
-        # weather proxy: better in shoulder months, worse in peak summer/winter storms
+        # weather is better in shoulder months, worse in peak summer/winter
         weather_score = np.random.normal(7 if month in [3, 4, 10, 11] else 5, 1.5)
         weather_score = float(np.clip(weather_score, 0, 10))
 
-        # ---- delay probability model ----
+        # delay probability - stacking up a few factors
         delay_prob = 0.12
         if dep_hour in [17, 18, 19, 20]:
-            delay_prob += 0.08
+            delay_prob += 0.08  # evening congestion
         if weather_score < 4:
             delay_prob += 0.15
         if is_holiday_season:
@@ -68,7 +65,7 @@ def generate():
         delayed = int(np.random.binomial(1, min(delay_prob, 0.85)))
         delay_minutes = int(np.random.exponential(45) + 15) if delayed else 0
 
-        # ---- demand model ----
+        # demand
         base_demand = 0.65
         if is_holiday_season:
             base_demand += 0.20
@@ -79,7 +76,7 @@ def generate():
         seat_capacity = 350
         passengers_booked = int(demand_ratio * seat_capacity)
 
-        # ---- price model (demand-driven) ----
+        # price goes up with demand
         base_price = 1800 + distance * 0.15
         price = base_price * (1 + (demand_ratio - 0.6) * 0.8)
         price = round(max(price, 800), 2)
