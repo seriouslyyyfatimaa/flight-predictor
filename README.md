@@ -3,7 +3,7 @@
 A machine learning project predicting **flight delay likelihood** and **passenger demand** for
 Dubai (DXB) hub routes, with an interactive dashboard for exploring the predictions.
 
-🔗 **Live demo:** _add your Streamlit Cloud link here after deploying (see below)_
+🔗 **Live demo:** [Try the live demo](https://flight-predictor-upyjnyjzncjggsbd3qrjmx.streamlit.app/)_
 
 Built as a portfolio project targeting aviation/airline data roles (e.g. Emirates Group)
 — re-purposed from a general sales-prediction pipeline into an aviation-specific one.
